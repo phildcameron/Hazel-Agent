@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hazel — Prospect Research Agent</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #f7f3ee; color: #1a1a2e; min-height: 100vh; }
+header { background: #1a1a2e; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.logo { font-size: 1.3rem; color: #c9a84c; font-weight: 600; }
+.logo em { color: #f7f3ee; font-style: italic; font-weight: 400; }
+.api-row { display: flex; align-items: center; gap: 8px; }
+.api-label { font-size: 0.7rem; color: #8a8680; text-transform: uppercase; letter-spacing: 0.06em; }
+#apiKey { padding: 7px 11px; border-radius: 6px; border: 1px solid #444; background: #2d2d4a; color: #f7f3ee; font-size: 0.8rem; width: 220px; outline: none; font-family: inherit; }
+.container { max-width: 1060px; margin: 0 auto; padding: 28px 18px; }
+.tabs { display: flex; gap: 4px; background: #e2ddd7; border-radius: 10px; padding: 4px; width: fit-content; margin-bottom: 26px; }
+.tab { padding: 9px 20px; border-radius: 7px; border: none; background: transparent; color: #8a8680; font-family: inherit; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.tab.active { background: #1a1a2e; color: #c9a84c; }
+.panel { display: none; }
+.panel.active { display: block; }
+h2 { font-size: 1.4rem; font-weight: 600; margin-bottom: 6px; }
+.sub { font-size: 0.875rem; color: #8a8680; margin-bottom: 22px; line-height: 1.6; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.field label { display: block; font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: #8a8680; margin-bottom: 5px; }
+.field input, .field select, .field textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #e2ddd7; border-radius: 8px; background: #fff; font-family: inherit; font-size: 0.875rem; color: #1a1a2e; outline: none; }
+.field textarea { min-height: 64px; resize: vertical; }
+.field.span2 { grid-column: span 2; }
+.btn { background: #1a1a2e; color: #c9a84c; border: none; padding: 11px 26px; border-radius: 8px; font-family: inherit; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.bar-wrap { margin: 14px 0; }
+.bar-track { height: 3px; background: #e2ddd7; border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+.bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #c9a84c, #7a9e7e); border-radius: 2px; transition: width 0.4s; }
+.bar-msg { font-size: 0.78rem; color: #8a8680; }
+.err { color: #c9716a; background: #fff0f0; padding: 12px; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; margin-top: 14px; word-break: break-word; }
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); margin-top: 16px; }
+th { background: #1a1a2e; color: #e8d5a3; padding: 11px 14px; text-align: left; font-size: 0.7rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+td { padding: 12px 14px; border-bottom: 1px solid #e2ddd7; font-size: 0.85rem; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+.badge { padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 500; }
+.badge-high { background: #e8f5e9; color: #2e7d32; }
+.badge-medium { background: #fff8e1; color: #f57f17; }
+.badge-low { background: #fce4ec; color: #c62828; }
+.ghost-btn { background: transparent; border: 1px solid #c9a84c; color: #c9a84c; padding: 4px 12px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; font-family: inherit; }
+.hint { margin-top: 10px; font-size: 0.76rem; color: #8a8680; }
+.results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; margin-top: 24px; }
+.pill { font-size: 0.78rem; color: #8a8680; background: #e2ddd7; padding: 3px 12px; border-radius: 20px; }
+.row-flex { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 18px; }
+.row-flex .field { flex: 1; min-width: 130px; }
+.dossier-card { background: #fff; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden; margin-top: 20px; }
+.dossier-head { background: #1a1a2e; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
+.dossier-name { font-size: 1.2rem; color: #f7f3ee; font-weight: 600; }
+.dossier-title { font-size: 0.83rem; color: #e8d5a3; margin-top: 3px; }
+.score-circle { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #c9a84c; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+.score-num { font-size: 1.2rem; font-weight: 700; line-height: 1; }
+.score-lbl { font-size: 0.58rem; color: #e8d5a3; text-transform: uppercase; letter-spacing: 0.05em; }
+.dossier-body { padding: 22px 24px; }
+.dossier-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+.dossier-section { background: #f7f3ee; border-radius: 10px; padding: 15px; }
+.dossier-section.span2 { grid-column: span 2; }
+.sec-title { font-size: 0.68rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: #c9a84c; margin-bottom: 7px; }
+.sec-text { font-size: 0.85rem; line-height: 1.7; color: #3a3a4a; }
+.sec-list { padding-left: 16px; }
+.sec-list li { font-size: 0.85rem; line-height: 1.7; color: #3a3a4a; margin-bottom: 3px; }
+.hook-box { background: #f0ede8; border-left: 3px solid #c9a84c; border-radius: 0 10px 10px 0; padding: 14px 18px; margin-bottom: 16px; }
+.msg-box { background: #1a1a2e; border-radius: 10px; padding: 18px 22px; }
+.msg-text { font-size: 0.875rem; line-height: 1.8; color: #f7f3ee; }
+.copy-btn { margin-top: 12px; background: #c9a84c; color: #1a1a2e; border: none; padding: 7px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 500; cursor: pointer; font-family: inherit; }
+.empty { text-align: center; padding: 50px 20px; color: #8a8680; }
+.empty-icon { font-size: 2rem; margin-bottom: 10px; }
+@media(max-width:640px){ .grid2,.dossier-grid{ grid-template-columns:1fr; } .field.span2,.dossier-section.span2{ grid-column:span 1; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Hazel <em>— by Ruth Elliott</em></div>
+  <div class="api-row">
+    <span class="api-label">API Key</span>
+    <input type="password" id="apiKey" placeholder="sk-ant-...">
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('s1',this)">Stage 1 — Prospect List</button>
+    <button class="tab" onclick="switchTab('s2',this)">Stage 2 — Dossier</button>
+  </div>
+
+  <!-- STAGE 1 -->
+  <div id="s1" class="panel active">
+    <h2>Build a Prospect List</h2>
+    <p class="sub">Set your filters. Hazel generates a qualified, scored list ready for outreach.</p>
+    <div class="grid2">
+      <div class="field">
+        <label>Region</label>
+        <select id="country">
+          <option>Australia</option>
+          <option>New Zealand</option>
+          <option selected>Australia and New Zealand</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Min Company Size</label>
+        <select id="size">
+          <option>500+</option>
+          <option>1,000+</option>
+          <option>5,000+</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Industries</label>
+        <input id="industries" value="FMCG, Retail, Financial Services, Professional Services, Healthcare">
+      </div>
+      <div class="field">
+        <label>Job Titles</label>
+        <input id="titles" value="Head of L&D, HR Director, People & Culture Director, Chief People Officer">
+      </div>
+      <div class="field span2">
+        <label>Additional Context (optional)</label>
+        <textarea id="ctx" placeholder="e.g. companies with recent leadership programs or rapid growth..."></textarea>
+      </div>
+    </div>
+    <button class="btn" id="listBtn" onclick="generateList()">Generate Prospect List</button>
+    <div class="bar-wrap" id="listBar" style="display:none">
+      <div class="bar-track"><div class="bar-fill" id="listFill"></div></div>
+      <div class="bar-msg">Searching ANZ companies and scoring against Ruth's ICP...</div>
+    </div>
+    <div id="listErr"></div>
+    <div id="listResults"></div>
+  </div>
+
+  <!-- STAGE 2 -->
+  <div id="s2" class="panel">
+    <h2>Build a Prospect Dossier</h2>
+    <p class="sub">Enter prospect details. Hazel researches them and drafts a personalised opening message.</p>
+    <div class="row-flex">
+      <div class="field"><label>Name</label><input id="pName" placeholder="e.g. Sarah Chen"></div>
+      <div class="field"><label>Title</label><input id="pTitle" placeholder="e.g. Head of L&D"></div>
+      <div class="field"><label>Company</label><input id="pCompany" placeholder="e.g. Woolworths Group"></div>
+      <button class="btn" id="dossierBtn" onclick="generateDossier()" style="white-space:nowrap;margin-bottom:1px">Research Prospect</button>
+    </div>
+    <div class="bar-wrap" id="dossierBar" style="display:none">
+      <div class="bar-track"><div class="bar-fill" id="dossierFill"></div></div>
+      <div class="bar-msg">Researching company context and drafting opening message...</div>
+    </div>
+    <div id="dossierErr"></div>
+    <div id="dossierResult">
+      <div class="empty"><div class="empty-icon">🔍</div><p>Enter prospect details above and click <strong>Research Prospect</strong>.</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function fitBadge(f) {
+  const cls = f === 'High' ? 'badge-high' : f === 'Medium' ? 'badge-medium' : 'badge-low';
+  return '<span class="badge ' + cls + '">' + f + '</span>';
+}
+
+function startBar(fillId, barId) {
+  document.getElementById(barId).style.display = 'block';
+  let pct = 0;
+  return setInterval(() => {
+    pct = Math.min(pct + Math.random() * 12, 85);
+    document.getElementById(fillId).style.width = pct + '%';
+  }, 400);
+}
+
+function stopBar(timer, fillId, barId) {
+  clearInterval(timer);
+  document.getElementById(fillId).style.width = '100%';
+  setTimeout(() => { document.getElementById(barId).style.display = 'none'; }, 500);
+}
+
+async function callClaude(prompt) {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) throw new Error('Please enter your Anthropic API key at the top of the page.');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = text;
+    try { msg = JSON.parse(text).error.message; } catch {}
+    throw new Error('API ' + res.status + ': ' + msg.slice(0, 300));
+  }
+
+  const data = JSON.parse(text);
+  if (data.error) throw new Error(data.error.message);
+  const raw = data.content[0].text.trim();
+  const a = raw.indexOf('['), o = raw.indexOf('{');
+  const isArr = a !== -1 && (o === -1 || a < o);
+  const s = isArr ? a : o;
+  const e = isArr ? raw.lastIndexOf(']') : raw.lastIndexOf('}');
+  if (s === -1 || e === -1) throw new Error('No JSON found. Model replied: ' + raw.slice(0, 200));
+  return JSON.parse(raw.slice(s, e + 1));
+}
+
+async function generateList() {
+  const btn = document.getElementById('listBtn');
+  const errEl = document.getElementById('listErr');
+  errEl.innerHTML = '';
+  btn.disabled = true;
+  const timer = startBar('listFill', 'listBar');
+
+  const prompt =
+    'You are a B2B prospect research agent for Ruth Elliott, a leadership coach in Auckland NZ.\n\n' +
+    'Generate a realistic ANZ prospect list.\n' +
+    'Region: ' + document.getElementById('country').value + '\n' +
+    'Company size: ' + document.getElementById('size').value + ' employees\n' +
+    'Industries: ' + document.getElementById('industries').value + '\n' +
+    'Titles: ' + document.getElementById('titles').value + '\n' +
+    'Context: ' + (document.getElementById('ctx').value || 'none') + '\n\n' +
+    'Return ONLY a raw JSON array of exactly 8 objects. Keys: name, title, company, industry, employees (string), email, fitScore (High/Medium/Low), fitReason. No markdown. Start with [ end with ].';
+
+  try {
+    const data = await callClaude(prompt);
+    stopBar(timer, 'listFill', 'listBar');
+    const high = data.filter(p => p.fitScore === 'High').length;
+    let html = '<div class="results-header"><strong>Prospect List</strong><span class="pill">' + data.length + ' prospects · ' + high + ' high-fit</span></div>';
+    html += '<div style="overflow-x:auto"><table><thead><tr>';
+    ['Name','Title','Company','Industry','Size','Fit',''].forEach(h => html += '<th>' + h + '</th>');
+    html += '</tr></thead><tbody>';
+    data.forEach(p => {
+      html += '<tr><td><strong>' + p.name + '</strong></td><td style="color:#8a8680;font-size:0.8rem">' + p.title + '</td><td>' + p.company + '</td><td style="font-size:0.8rem">' + p.industry + '</td><td style="font-size:0.8rem">' + p.employees + '</td><td>' + fitBadge(p.fitScore) + '</td><td><button class="ghost-btn" onclick="loadDossier(\'' + encodeURIComponent(p.name) + '\',\'' + encodeURIComponent(p.title) + '\',\'' + encodeURIComponent(p.company) + '\')">Dossier →</button></td></tr>';
+    });
+    html += '</tbody></table></div><p class="hint">Click Dossier on any high-fit prospect to generate a full research brief.</p>';
+    document.getElementById('listResults').innerHTML = html;
+  } catch(e) {
+    stopBar(timer, 'listFill', 'listBar');
+    errEl.innerHTML = '<div class="err">' + e.message + '</div>';
+  }
+  btn.disabled = false;
+}
+
+function loadDossier(name, title, company) {
+  document.getElementById('pName').value = decodeURIComponent(name);
+  document.getElementById('pTitle').value = decodeURIComponent(title);
+  document.getElementById('pCompany').value = decodeURIComponent(company);
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('s2').classList.add('active');
+  document.querySelectorAll('.tab')[1].classList.add('active');
+  generateDossier();
+}
+
+async function generateDossier() {
+  const name = document.getElementById('pName').value.trim();
+  const title = document.getElementById('pTitle').value.trim();
+  const company = document.getElementById('pCompany').value.trim();
+  const errEl = document.getElementById('dossierErr');
+  errEl.innerHTML = '';
+
+  if (!name || !company) { errEl.innerHTML = '<div class="err">Please enter a name and company.</div>'; return; }
+
+  const btn = document.getElementById('dossierBtn');
+  btn.disabled = true;
+  document.getElementById('dossierResult').innerHTML = '';
+  const timer = startBar('dossierFill', 'dossierBar');
+
+  const prompt =
+    'You are a B2B prospect research agent for Ruth Elliott, a leadership coach in Auckland NZ who coaches female leaders at 500+ employee companies. Clients: Accenture, Fonterra, Woolworths.\n\n' +
+    'Generate a prospect dossier.\nName: ' + name + '\nTitle: ' + (title || 'HR/L&D Leader') + '\nCompany: ' + company + '\n\n' +
+    'Return ONLY a raw JSON object. No markdown. Start with { end with }.\n' +
+    'Keys: name, title, company, fitScore (integer 1-10), companyOverview (2-3 sentences), leadershipContext (2-3 sentences), triggerEvents (array of 3 strings), womenInLeadership (1-2 sentences), painPoints (array of 3 strings), personalisationHook (1 sentence), suggestedOpeningMessage (4-5 warm LinkedIn sentences ending with a soft question).';
+
+  try {
+    const d = await callClaude(prompt);
+    stopBar(timer, 'dossierFill', 'dossierBar');
+    const sc = d.fitScore >= 8 ? '#2e7d32' : d.fitScore >= 6 ? '#f57f17' : '#c62828';
+    const triggers = (d.triggerEvents || []).map(t => '<li>' + t + '</li>').join('');
+    const pains = (d.painPoints || []).map(t => '<li>' + t + '</li>').join('');
+    const html =
+      '<div class="dossier-card">' +
+        '<div class="dossier-head">' +
+          '<div><div class="dossier-name">' + d.name + '</div><div class="dossier-title">' + d.title + ' · ' + d.company + '</div></div>' +
+          '<div class="score-circle"><span class="score-num" style="color:' + sc + '">' + d.fitScore + '</span><span class="score-lbl">Fit</span></div>' +
+        '</div>' +
+        '<div class="dossier-body">' +
+          '<div class="dossier-grid">' +
+            '<div class="dossier-section"><div class="sec-title">Company Overview</div><p class="sec-text">' + d.companyOverview + '</p></div>' +
+            '<div class="dossier-section"><div class="sec-title">Leadership Context</div><p class="sec-text">' + d.leadershipContext + '</p></div>' +
+            '<div class="dossier-section"><div class="sec-title">Trigger Events</div><ul class="sec-list">' + triggers + '</ul></div>' +
+            '<div class="dossier-section"><div class="sec-title">Pain Points</div><ul class="sec-list">' + pains + '</ul></div>' +
+            '<div class="dossier-section span2"><div class="sec-title">Women in Leadership</div><p class="sec-text">' + d.womenInLeadership + '</p></div>' +
+          '</div>' +
+          '<div class="hook-box"><div class="sec-title">Personalisation Hook</div><p class="sec-text" style="font-style:italic">' + d.personalisationHook + '</p></div>' +
+          '<div class="msg-box">' +
+            '<div class="sec-title" style="color:#c9a84c">Suggested Opening Message (LinkedIn)</div>' +
+            '<p class="msg-text">' + d.suggestedOpeningMessage + '</p>' +
+            '<button class="copy-btn" onclick="copyMsg(this,\'' + encodeURIComponent(d.suggestedOpeningMessage) + '\')">Copy Message</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.getElementById('dossierResult').innerHTML = html;
+  } catch(e) {
+    stopBar(timer, 'dossierFill', 'dossierBar');
+    errEl.innerHTML = '<div class="err">' + e.message + '</div>';
+  }
+  btn.disabled = false;
+}
+
+function copyMsg(btn, encoded) {
+  navigator.clipboard.writeText(decodeURIComponent(encoded)).then(() => {
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => btn.textContent = 'Copy Message', 2000);
+  });
+}
+</script>
+</body>
+</html>
